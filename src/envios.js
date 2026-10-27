@@ -1,9 +1,12 @@
 /**
  * Cálculo de los gastos de envío de la tienda.
  *
- * Funciona, pero cada tipo de envío nuevo obliga a modificar calcularGastosEnvio.
- * Hay que refactorizarlo (ver ENUNCIADO.md).
+ * Es el contexto del patrón Strategy: valida el pedido y delega el cálculo en una estrategia de
+ * envío. No sabe qué tipos de envío existen; eso lo decide la fábrica.
+ * @module envios
  */
+
+import { crearEstrategiaEnvio } from './fabrica.js';
 
 /** Zonas a las que se envía. */
 export const ZONAS = ['peninsula', 'baleares', 'canarias'];
@@ -11,7 +14,7 @@ export const ZONAS = ['peninsula', 'baleares', 'canarias'];
 /**
  * Pedido de la tienda.
  * @typedef {object} Pedido
- * @property {string} tipoEnvio `'estandar'`, `'urgente'` o `'recogida'`.
+ * @property {string} tipoEnvio Uno de `TIPOS_ENVIO` (por ejemplo, `'estandar'`, `'urgente'`, `'recogida'` o `'punto'`).
  * @property {string} zona Una de ZONAS.
  * @property {number} peso Peso en kg.
  * @property {number} importe Importe de los productos, en euros.
@@ -21,31 +24,16 @@ export const ZONAS = ['peninsula', 'baleares', 'canarias'];
  * Gastos de envío de un pedido.
  *
  * @param {Pedido} pedido
+ * @param {import('./estrategias.js').EstrategiaEnvio} [estrategia] Estrategia con la que calcular; si no se
+ *   indica, la que crea la fábrica a partir de `pedido.tipoEnvio`.
  * @returns {number} Gastos en euros, redondeados a céntimos.
  * @throws {Error} Si la zona o el tipo de envío no existen.
  */
-export function calcularGastosEnvio(pedido) {
+export function calcularGastosEnvio(pedido, estrategia) {
   if (!ZONAS.includes(pedido.zona)) {
     throw new Error(`Zona desconocida: ${pedido.zona}`);
   }
-  switch (pedido.tipoEnvio) {
-    case 'estandar':
-      if (pedido.importe >= 50) return 0;
-      if (pedido.zona === 'peninsula') return 4.95;
-      if (pedido.zona === 'baleares') return 9.95;
-      return 14.95;
-    case 'urgente': {
-      let coste = 9.95 + pedido.peso * 1.2;
-      if (pedido.zona !== 'peninsula') {
-        coste = coste * 2;
-      }
-      return Math.round(coste * 100) / 100;
-    }
-    case 'recogida':
-      return 0;
-    default:
-      throw new Error(`Tipo de envío desconocido: ${pedido.tipoEnvio}`);
-  }
+  return (estrategia ?? crearEstrategiaEnvio(pedido.tipoEnvio)).calcular(pedido);
 }
 
 /**
