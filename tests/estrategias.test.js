@@ -31,7 +31,7 @@ describe('EnvioEstandar', () => {
   });
 
   it.each([
-    ['peninsula', 5.95],
+    ['peninsula', 4.95],
     ['baleares', 9.95],
     ['canarias', 14.95],
   ])('a %s por debajo del importe gratuito cuesta %d €', (zona, esperado) => {
