@@ -6,6 +6,7 @@ import {
   EnvioEstandar,
   EnvioUrgente,
   RecogidaEnTienda,
+  EntregaEnPunto,
 } from '../src/estrategias.js';
 
 const pedido = (datos) => ({ tipoEnvio: 'x', zona: 'peninsula', peso: 1, importe: 20, ...datos });
@@ -95,5 +96,65 @@ describe('RecogidaEnTienda', () => {
 
   it('es gratis aunque el pedido pese mucho y el importe sea pequeño', () => {
     expect(new RecogidaEnTienda().calcular(pedido({ peso: 500, importe: 0.01 }))).toBe(0);
+  });
+});
+
+describe('EntregaEnPunto', () => {
+  it('se llama «Punto de recogida»', () => {
+    expect(new EntregaEnPunto().nombre).toBe('Punto de recogida');
+  });
+
+  it.each([
+    ['peninsula', 2.95],
+    ['baleares', 5.95],
+    ['canarias', 5.95],
+  ])('a %s por debajo del importe gratuito cuesta %d €', (zona, esperado) => {
+    expect(new EntregaEnPunto().calcular(pedido({ zona }))).toBe(esperado);
+  });
+
+  it('es gratis justo en el importe mínimo (30 €) y cuesta 1 céntimo por debajo', () => {
+    const estrategia = new EntregaEnPunto();
+    expect(estrategia.calcular(pedido({ importe: EntregaEnPunto.GRATIS_DESDE }))).toBe(0);
+    expect(estrategia.calcular(pedido({ importe: 29.99 }))).toBe(2.95);
+  });
+
+  it('no depende del peso del pedido', () => {
+    expect(new EntregaEnPunto().calcular(pedido({ peso: 0 }))).toBe(2.95);
+    expect(new EntregaEnPunto().calcular(pedido({ peso: 500 }))).toBe(2.95);
+  });
+
+  it('lanza un error con una zona desconocida', () => {
+    expect(() => new EntregaEnPunto().calcular(pedido({ zona: 'luna' }))).toThrow(
+      'Zona desconocida: luna',
+    );
+  });
+});
+
+describe('interfaz común de todas las estrategias', () => {
+  const clases = [EnvioEstandar, EnvioUrgente, RecogidaEnTienda, EntregaEnPunto];
+
+  it.each(clases.map((Clase) => [Clase.name, Clase]))(
+    '%s hereda de EstrategiaEnvio y tiene nombre y calcular',
+    (_nombreClase, Clase) => {
+      const estrategia = new Clase();
+      expect(estrategia).toBeInstanceOf(EstrategiaEnvio);
+      expect(typeof estrategia.nombre).toBe('string');
+      expect(estrategia.nombre).not.toBe('');
+      expect(typeof estrategia.calcular).toBe('function');
+    },
+  );
+
+  it.each(clases.map((Clase) => [Clase.name, Clase]))(
+    '%s devuelve un número redondeado a céntimos',
+    (_nombreClase, Clase) => {
+      const gastos = new Clase().calcular(pedido({ peso: 3.7, importe: 10 }));
+      expect(typeof gastos).toBe('number');
+      expect(Math.round(gastos * 100) / 100).toBe(gastos);
+    },
+  );
+
+  it('cada estrategia tiene un nombre distinto', () => {
+    const nombres = clases.map((Clase) => new Clase().nombre);
+    expect(new Set(nombres).size).toBe(clases.length);
   });
 });
