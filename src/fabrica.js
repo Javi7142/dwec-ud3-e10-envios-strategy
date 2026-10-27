@@ -5,7 +5,7 @@
  * @module fabrica
  */
 
-import { EnvioEstandar, EnvioUrgente, RecogidaEnTienda } from './estrategias.js';
+import { EnvioEstandar, EnvioUrgente, RecogidaEnTienda, EntregaEnPunto } from './estrategias.js';
 
 /**
  * Registro de tipos de envío: tipo → clase de la estrategia. Es la única lista que hay que
@@ -18,6 +18,7 @@ const REGISTRO = new Map([
   ['estandar', EnvioEstandar],
   ['urgente', EnvioUrgente],
   ['recogida', RecogidaEnTienda],
+  ['punto', EntregaEnPunto],
 ]);
 
 /**

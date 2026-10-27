@@ -174,3 +174,40 @@ export class RecogidaEnTienda extends EstrategiaEnvio {
     return RecogidaEnTienda.COSTE;
   }
 }
+
+/**
+ * Entrega en un punto de recogida: precio fijo por zona y gratis a partir de un importe.
+ *
+ * @example
+ * new EntregaEnPunto().calcular({ zona: 'peninsula', importe: 25, peso: 2 }); // 2.95
+ */
+export class EntregaEnPunto extends EstrategiaEnvio {
+  /**
+   * Importe de los productos desde el que la entrega es gratis, en euros.
+   * @type {number}
+   */
+  static GRATIS_DESDE = 30;
+
+  /**
+   * Precio de la entrega por zona, en euros.
+   * @type {Record<string, number>}
+   */
+  static PRECIOS = { peninsula: 2.95, baleares: 5.95, canarias: 5.95 };
+
+  /** @type {string} */
+  get nombre() {
+    return 'Punto de recogida';
+  }
+
+  /**
+   * @param {Pedido} pedido
+   * @returns {number} 0 si el importe llega al mínimo; en otro caso, el precio de la zona.
+   * @throws {Error} Si la zona no existe.
+   */
+  calcular(pedido) {
+    if (pedido.importe >= EntregaEnPunto.GRATIS_DESDE) {
+      return 0;
+    }
+    return precioDeZona(EntregaEnPunto.PRECIOS, pedido.zona);
+  }
+}
